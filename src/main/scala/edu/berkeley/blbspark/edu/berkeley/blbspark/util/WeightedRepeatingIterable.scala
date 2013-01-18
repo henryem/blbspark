@@ -11,7 +11,7 @@ import collection.Iterator
  * ...then the result of iterating over this collection is:
  *   ["a", "a", "b", "a"]
  */
-class WeightedRepeatingIterable[D](val weightedItems: Iterable[WeightedItem[D]]) extends Iterable[D] {
+class WeightedRepeatingIterable[D](val weightedItems: Iterable[WeightedItem[D]]) extends Iterable[D] with Serializable {
   override def iterator = {
     weightedItems.iterator.flatMap((weightedItem: WeightedItem[D]) => {
       Preconditions.checkArgument(weightedItem.weight == math.round(weightedItem.weight))

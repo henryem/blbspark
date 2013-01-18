@@ -37,7 +37,7 @@ class BlbSuite extends FunSuite with BeforeAndAfterEach with ShouldMatchers {
         .map(int => WeightedItem.single(int))
         .toSeq,
       20)
-    val mean = (items: Seq[WeightedItem[Double]]) => items.map(_.item).sum / items.size
+    val mean = (items: Seq[WeightedItem[Double]]) => items.map(item => item.item * item.weight ).sum / items.map(item => item.weight).sum
     val sampleStdDev = (thetas: Seq[Double]) => {
       val squares = thetas.map(thetaVal => thetaVal*thetaVal)
       val sumSquares = squares.sum

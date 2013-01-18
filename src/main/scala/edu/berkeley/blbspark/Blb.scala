@@ -21,13 +21,15 @@ object Blb {
    */
   //TODO: @n could be allowed to be a Double instead.
   def makeBlbSubsamples[D: ClassManifest](originalData: RDD[WeightedItem[D]], n: Int, alpha: Double, s: Int, numSplits: Int): RDD[Seq[WeightedItem[D]]] = {
+    val x = originalData.collect()
     val subsampleSize = math.round(math.pow(n, alpha)).asInstanceOf[Int]
     val seed = new Random().nextInt()
     val flatSamples: RDD[PartitionLabeledItem[WeightedItem[D]]] = ExactSampling.sampleRepeatedlyWithWeights(
       originalData,
       false,
-      Iterator.empty.padTo(s, subsampleSize).toSeq,
+      Array.fill(s)(subsampleSize),
       seed)
+    val y = flatSamples.collect()
     flatSamples
       .groupBy(_.partitionLabel, numSplits)
       .map(_._2.map(_.item))
@@ -44,7 +46,7 @@ object Blb {
       //NOTE: Here I am ensuring that each MultinomialDistribution across all
       // subsamples and resamples gets a unique seed.
       val counts = new MultinomialDistribution(samplingProbabilities, n, resampleIdx + r*subsampleIdx).sample()
-      (1 to subsample.size).map((itemIdx: Int) => {
+      (0 until subsample.size).map((itemIdx: Int) => {
         new WeightedItem[D](subsample(itemIdx).item, counts(itemIdx))
       })
     }
@@ -55,13 +57,14 @@ object Blb {
       val subsampleCount: Double = subsample.map(_.weight).sum
       val samplingProbabilities = subsample.map(_.weight / subsampleCount)
       //TODO: Could parallelize this.
-      (1 to r).map(doSingleResample(subsampleIdx, subsample, samplingProbabilities))
+      (0 until r).map(doSingleResample(subsampleIdx, subsample, samplingProbabilities))
     }
 
     def resampleSinglePartition(splitIdx: Int, partition: Iterator[Seq[WeightedItem[D]]]): Iterator[Seq[Seq[WeightedItem[D]]]] = {
       partition.zipWithIndex.map(resampleSingleSubsample(splitIdx))
     }
 
+    val a = subsamples.collect
     subsamples.mapPartitionsWithSplit(resampleSinglePartition)
   }
 
@@ -81,7 +84,9 @@ object Blb {
                                 theta: (Seq[WeightedItem[D]] => R),
                                 xi: (Seq[R] => S),
                                 average: (Seq[S] => S)): S = {
+    val b = samples.collect
     val estimates: RDD[Seq[R]] = samples.map({subsample: Seq[Seq[WeightedItem[D]]] => subsample.map(theta)})
+    val c = estimates.collect
     val xiValues: Seq[S] = estimates.map(xi).collect
     average(xiValues)
   }

@@ -6,7 +6,7 @@ import scala.Iterator
  * An iterator over the presence of indices in @presentIndices.  The ith call
  * to next() returns true if i is in @presentIndices, false otherwise.
  */
-class IndexFilterIterator(val presentIndices: Iterator[Int]) extends Iterator[Boolean] {
+class IndexFilterIterator(val presentIndices: Iterator[Int]) extends Iterator[Boolean] with Serializable {
   var nextPotentialIndex = 0
   var nextPresentIndex = if (presentIndices.hasNext) {
     presentIndices.next

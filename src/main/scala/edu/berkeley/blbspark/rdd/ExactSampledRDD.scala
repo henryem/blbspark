@@ -30,7 +30,7 @@ abstract class ExactSampledRDD[T: ClassManifest](
     val originalDataset: RDD[T],
     val sampleCount: Int,
     val seed: Int)
-    extends RDD[T](originalDataset.context) {
+    extends RDD[T](originalDataset.context) with Serializable {
 
   val cachedOriginalDataset: RDD[T] = originalDataset.cache()
   val originalPartitionSizes: Seq[Int] = cachedOriginalDataset
@@ -64,7 +64,7 @@ class ExactWorSampledRDD[T: ClassManifest](
     originalDataset: RDD[T],
     sampleCount: Int,
     seed: Int)
-    extends ExactSampledRDD[T](originalDataset, sampleCount, seed) {
+    extends ExactSampledRDD[T](originalDataset, sampleCount, seed) with Serializable {
   override def compute(split: Split): Iterator[T] = {
     val sampleSplit: ExactSampledRDDSplit = split.asInstanceOf[ExactSampledRDDSplit]
     val sampleSize = sampleSplit.splitSampleSize
@@ -94,7 +94,7 @@ class RandomPartitionedRDD[T: ClassManifest](
   val originalDataset: RDD[WeightedItem[T]],
   val sampleCounts: Seq[Int],
   val seed: Int)
-  extends RDD[PartitionLabeledItem[WeightedItem[T]]](originalDataset.context) {
+  extends RDD[PartitionLabeledItem[WeightedItem[T]]](originalDataset.context) with Serializable {
 
     val cachedOriginalDataset = originalDataset.cache()
     val originalPartitionSizes = cachedOriginalDataset
@@ -103,20 +103,22 @@ class RandomPartitionedRDD[T: ClassManifest](
     val perPartitionSampleSizes = new RandomPartitionDistribution(originalPartitionSizes, sampleCounts, seed)
         .sample()
 
-    override def splits = {
+    @transient
+    private val splitsCache : Array[Split] = {
       val rg = new Random(seed)
       (0 until originalDataset.splits.size)
-          .map(idx => {
-            new PartitionedRDDSplit(originalDataset.splits(idx), originalPartitionSizes(idx), perPartitionSampleSizes(idx), rg.nextInt)
-          })
-          .toArray
+        .map(idx => {
+          new PartitionedRDDSplit(originalDataset.splits(idx), originalPartitionSizes(idx), perPartitionSampleSizes(idx), rg.nextInt)
+        })
+        .toArray
     }
+    override def splits = splitsCache
 
     @transient
     override val dependencies = List(new OneToOneDependency(originalDataset))
 
     override def preferredLocations(split: Split) =
-      originalDataset.preferredLocations(split.asInstanceOf[ExactSampledRDDSplit].originalSplit)
+      originalDataset.preferredLocations(split.asInstanceOf[PartitionedRDDSplit].originalSplit)
 
     override def compute(split: Split) = {
       val sampleSplit: PartitionedRDDSplit = split.asInstanceOf[PartitionedRDDSplit]
@@ -124,10 +126,15 @@ class RandomPartitionedRDD[T: ClassManifest](
       // That is, currently we use a reservoir sampler to precompute the indices,
       // but we could compute the indices "on the fly" instead.
       val sampleGroups = new GroupedReservoirSampler(sampleSplit.splitSampleSizes, sampleSplit.originalSplitSize, new Random(seed))
-      originalDataset.iterator(split)
-        .zip(sampleGroups)
+      val sampleGroupsSeq = sampleGroups.toArray
+      //FIXME: Debugging code.
+      val originalSplit = originalDataset.iterator(split).toArray
+      val zippedSplit = originalSplit
+        .zip(sampleGroupsSeq).toArray
+      val theSplit = zippedSplit
         .map(tuple => PartitionLabeledItem(tuple._1, tuple._2))
-        .filter(_.partitionLabel != -1)
+        .filter(_.partitionLabel != -1).toArray
+      theSplit.toIterator
     }
 }
 
