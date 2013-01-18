@@ -21,7 +21,6 @@ object Blb {
    */
   //TODO: @n could be allowed to be a Double instead.
   def makeBlbSubsamples[D: ClassManifest](originalData: RDD[WeightedItem[D]], n: Int, alpha: Double, s: Int, numSplits: Int): RDD[Seq[WeightedItem[D]]] = {
-    val x = originalData.collect()
     val subsampleSize = math.round(math.pow(n, alpha)).asInstanceOf[Int]
     val seed = new Random().nextInt()
     val flatSamples: RDD[PartitionLabeledItem[WeightedItem[D]]] = ExactSampling.sampleRepeatedlyWithWeights(
@@ -29,17 +28,27 @@ object Blb {
       false,
       Array.fill(s)(subsampleSize),
       seed)
-    val y = flatSamples.collect()
     flatSamples
       .groupBy(_.partitionLabel, numSplits)
       .map(_._2.map(_.item))
   }
 
   /**
-   * @return an RDD of subsamples, with r resamples for each subsample.  For
-   *   example, @result[0] will be a list of r resamples. @result[0][0] is a
-   *   resample of total weight n.  @samples[0][0][0] is a particular weighted
-   *   element from a resample.  Its weight will be an integer.
+   * @return a deep RDD of resamples, with r resamples for each subsample.  For
+   *   example, @result[0] will be a list of r resamples corresponding to
+   *   @subsamples[0]. @result[0][0] is a resample from @subsamples[0] having
+   *   total weight n.  @samples[0][0][0] is a particular weighted element from
+   *   the first resample of @subsamples[0].  Its weight will be an integer.
+   *
+   * @param subsamples is an RDD of subsamples from some original dataset.
+   *   (Technically, of course, any RDD of sequences of weighted items will do,
+   *   but the intent is that these are disjoint subsamples from some original
+   *   dataset.)
+   * @param r is the number of resamples that will be taken for each subsample.
+   * @param n is the size of each resample.  n can be greater than the size of
+   *   a particular subsample, in which case some elements of that subsample
+   *   will be replicated (or rather, given higher weight than they already
+   *   have).
    */
   def resample[D](subsamples: RDD[Seq[WeightedItem[D]]], r: Int, n: Int): RDD[Seq[Seq[WeightedItem[D]]]] = {
     def doSingleResample(subsampleIdx: Int, subsample: Seq[WeightedItem[D]], samplingProbabilities: Seq[Double])(resampleIdx: Int): Seq[WeightedItem[D]] = {
@@ -64,7 +73,6 @@ object Blb {
       partition.zipWithIndex.map(resampleSingleSubsample(splitIdx))
     }
 
-    val a = subsamples.collect
     subsamples.mapPartitionsWithSplit(resampleSinglePartition)
   }
 
@@ -84,9 +92,7 @@ object Blb {
                                 theta: (Seq[WeightedItem[D]] => R),
                                 xi: (Seq[R] => S),
                                 average: (Seq[S] => S)): S = {
-    val b = samples.collect
     val estimates: RDD[Seq[R]] = samples.map({subsample: Seq[Seq[WeightedItem[D]]] => subsample.map(theta)})
-    val c = estimates.collect
     val xiValues: Seq[S] = estimates.map(xi).collect
     average(xiValues)
   }
@@ -101,7 +107,8 @@ object Blb {
    * O(totalNumberOfItems) time.  One bright spot is that we still only need to
    * use O(totalNumberOfItems) memory for the data that are being aggregated.
    *
-   * @return an aggregator that accepts weighted items.
+   * @return an aggregator that accepts weighted items but otherwise computes
+   *   the same thing as @aggregator.
    */
   def aggregatorToVsAggregator[D, R](aggregator: (Iterable[D] => R)): (Seq[WeightedItem[D]] => R) = {
     (weightedData: Seq[WeightedItem[D]]) => {

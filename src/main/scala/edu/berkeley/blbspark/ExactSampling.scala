@@ -6,11 +6,11 @@ import spark.RDD
 /** Factory methods for exact sampled RDDs. */
 object ExactSampling {
   def sample[T: ClassManifest](
-                                originalDataset: RDD[T],
-                                withReplacement: Boolean,
-                                sampleSize: Int,
-                                seed: Int):
-  RDD[T] = {
+      originalDataset: RDD[T],
+      withReplacement: Boolean,
+      sampleSize: Int,
+      seed: Int):
+      RDD[T] = {
     if (withReplacement) {
       throw new Exception("Not implemented yet!") //FIXME
       //new ExactReplacementSampledRDD(originalDataset, sampleSize, seed)
@@ -28,11 +28,11 @@ object ExactSampling {
    * are many copies of each datum.
    */
   def sampleWithWeights[T](
-                            originalDataset: RDD[WeightedItem[T]],
-                            withReplacement: Boolean,
-                            sampleSize: Int,
-                            seed: Int):
-  RDD[WeightedItem[T]] = {
+      originalDataset: RDD[WeightedItem[T]],
+      withReplacement: Boolean,
+      sampleSize: Int,
+      seed: Int):
+      RDD[WeightedItem[T]] = {
     throw new Exception("Not implemented yet!") //FIXME
   }
 
@@ -59,11 +59,11 @@ object ExactSampling {
    * If @withReplacement is false, neither #1 nor #2 are possible samples.
    */
   def sampleRepeatedly[T](
-                           originalDataset: RDD[T],
-                           withReplacement: Boolean,
-                           sampleSizes: Seq[Int],
-                           seed: Int):
-  RDD[(Int, T)] = {
+      originalDataset: RDD[T],
+      withReplacement: Boolean,
+      sampleSizes: Seq[Int],
+      seed: Int):
+      RDD[(Int, T)] = {
     if (withReplacement) {
       throw new Exception("Not implemented yet!") //FIXME
       //new RepeatedReplacementSampledRDD(originalDataset, sampleSizes, seed)
