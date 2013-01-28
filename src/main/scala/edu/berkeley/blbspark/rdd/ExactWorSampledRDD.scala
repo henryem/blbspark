@@ -4,7 +4,7 @@ import spark.{Split, RDD}
 import collection.Iterator
 import cern.jet.random.engine.DRand
 import cern.jet.random.sampling.RandomSampler
-import edu.berkeley.blbspark.edu.berkeley.blbspark.util.IndexFilterIterator
+import edu.berkeley.blbspark.util.IndexFilterIterator
 
 /**
  * An RDD sampled without replacement from @originalDataset.

@@ -3,8 +3,9 @@ package edu.berkeley.blbspark
 import dist.MultinomialDistribution
 import edu.berkeley.blbspark.util.WeightedRepeatingIterable
 import rdd.PartitionLabeledItem
+import sampling.GroupLabeledItem
 import scala.util.Random
-import spark.{SparkContext, RDD}
+import spark.RDD
 
 object Blb {
   /**
@@ -19,17 +20,17 @@ object Blb {
    *   without replacement, so only @n total things can be sampled.
    * @return a list of size @s containing RDDs of size @n^@alpha.
    */
-  //TODO: @n could be allowed to be a Double instead.
+  //TODO: @n should be allowed to be a Double instead.
   def makeBlbSubsamples[D: ClassManifest](originalData: RDD[WeightedItem[D]], n: Int, alpha: Double, s: Int, numSplits: Int): RDD[Seq[WeightedItem[D]]] = {
     val subsampleSize = math.round(math.pow(n, alpha)).asInstanceOf[Int]
     val seed = new Random().nextInt()
-    val flatSamples: RDD[PartitionLabeledItem[WeightedItem[D]]] = ExactSampling.sampleRepeatedlyWithWeights(
+    val flatSamples: RDD[GroupLabeledItem[WeightedItem[D]]] = ExactSampling.sampleRepeatedlyWithWeights(
       originalData,
       false,
       Array.fill(s)(subsampleSize),
       seed)
     flatSamples
-      .groupBy(_.partitionLabel, numSplits)
+      .groupBy(_.group, numSplits)
       .map(_._2.map(_.item))
   }
 

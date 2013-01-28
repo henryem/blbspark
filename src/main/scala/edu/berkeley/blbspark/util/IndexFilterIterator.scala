@@ -1,4 +1,4 @@
-package edu.berkeley.blbspark.edu.berkeley.blbspark.util
+package edu.berkeley.blbspark.util
 
 import scala.Iterator
 
