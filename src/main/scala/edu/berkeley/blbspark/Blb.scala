@@ -2,13 +2,18 @@ package edu.berkeley.blbspark
 
 import dist.MultinomialDistribution
 import edu.berkeley.blbspark.util.WeightedRepeatingIterable
-import rdd.PartitionLabeledItem
-import sampling.GroupLabeledItem
 import scala.util.Random
 import spark.RDD
 
 object Blb {
-  /**
+    /**
+   * @return an RDD of size @s, each element a subsample from @originalData of
+   *   size @n^@alpha.
+   *
+   * Some notes on performance: To avoid complicated communication among slaves,
+   * this function does O(@s*m) work on the driver machine, where m is the number
+   * of slave machines on which the data resides.
+
    * @param originalData is the data to be sampled.
    * @param n is the total weight of elements of @originalData.  For example, it can
    *   be calculated with:
@@ -18,7 +23,6 @@ object Blb {
    * @param s is the number of subsamples taken.  An important constraint is that
    *   @s * @n^@alpha <= @n.  This is necessary because subsampling is done
    *   without replacement, so only @n total things can be sampled.
-   * @return a list of size @s containing RDDs of size @n^@alpha.
    */
   //TODO: @n should be allowed to be a Double instead.
   def makeBlbSubsamples[D: ClassManifest](originalData: RDD[WeightedItem[D]], n: Int, alpha: Double, s: Int, numSplits: Int): RDD[Seq[WeightedItem[D]]] = {
@@ -78,16 +82,18 @@ object Blb {
   }
 
   /**
-   * @return an average of xi over @samples.
+   * @return an average of @xi over @samples.
    * @param samples is an RDD of subsamples, with a large number of resamples for
    *   each subsample.  For example, @samples[0] will be a list of r resamples.
    *   @samples[0][0] is a resample of total weight n.  @samples[0][0][0] is a
    *   particular weighted element from a resample.
    * @param theta is the estimator function, like SUM.  It produces values of type @R.
-   * @param xi is the variability function, like percentile or stddev.  It acts on a
-   *   list of theta-values computed for a single subsample, producing a single
-   *   value of type S.  Then the values of @xi on each subsample are averaged
-   *   together using @average.
+   * @param xi is a function from a distribution on estimates of type @R to some
+   *   property of interest for the distribution.  For example, this might compute a
+   *   95% confidence interval or a stddev.  It acts on a list of theta-values computed
+   *   for a single subsample, producing a single value of type @S.  Then the values of
+   *   @xi on each subsample are averaged together using @average, producing a final
+   *   estimate of the true value of @xi for this dataset and estimator.
    */
   def blb[D,R,S: ClassManifest](samples: RDD[Seq[Seq[WeightedItem[D]]]],
                                 theta: (Seq[WeightedItem[D]] => R),
@@ -113,7 +119,7 @@ object Blb {
    */
   def aggregatorToVsAggregator[D, R](aggregator: (Iterable[D] => R)): (Seq[WeightedItem[D]] => R) = {
     (weightedData: Seq[WeightedItem[D]]) => {
-      aggregator(new WeightedRepeatingIterable[D](weightedData))
+      aggregator(new WeightedRepeatingIterable(weightedData))
     }
   }
 }

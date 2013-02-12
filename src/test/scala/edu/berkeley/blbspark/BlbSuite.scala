@@ -34,7 +34,7 @@ class BlbSuite extends FunSuite with BeforeAndAfterEach with ShouldMatchers {
     val proportionTens = numTens.toDouble / totalItems
     val testData = sc.parallelize(
       (Iterator.fill(numZeroes)(0.0) ++ Iterator.fill(numTens)(10.0))
-        .map(int => WeightedItem.single(int))
+        .map(value => WeightedItem.single(value))
         .toSeq,
       20)
     val mean = (items: Seq[WeightedItem[Double]]) => items.map(item => item.item * item.weight ).sum / items.map(item => item.weight).sum

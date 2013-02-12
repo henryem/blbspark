@@ -1,11 +1,11 @@
 package edu.berkeley.blbspark.rdd
 
 import spark.{OneToOneDependency, RDD, Split}
-import edu.berkeley.blbspark.WeightedItem
+import edu.berkeley.blbspark.{GroupLabeledItem, WeightedItem}
 import collection.Iterator
-import edu.berkeley.blbspark.dist.{GroupedReservoirSampler, RandomPartitionDistribution}
+import edu.berkeley.blbspark.dist.{RandomPartitionDistribution}
 import java.util.Random
-import edu.berkeley.blbspark.sampling.GroupLabeledItem
+import edu.berkeley.blbspark.sampling.{GroupedReservoirSampling}
 
 class PartitionedRDDSplit(
     val originalSplit: Split,
@@ -49,10 +49,6 @@ class RandomPartitionedRDD[T: ClassManifest](
 
   override def compute(split: Split) = {
     val sampleSplit: PartitionedRDDSplit = split.asInstanceOf[PartitionedRDDSplit]
-    //TODO: Could use (a modified form of) reservoir sampling here instead.
-    // That is, currently we use a reservoir sampler to precompute the indices,
-    // but we could compute the indices "on the fly" instead.  This would be
-    // more efficient and simpler.
-    val sampleGroups = new GroupedReservoirSampler(originalDataset.iterator(sampleSplit.originalSplit), sampleSplit.splitSampleSizes, sampleSplit.originalSplitSize, new Random(seed))
+    GroupedReservoirSampling.sample(originalDataset.iterator(sampleSplit.originalSplit), sampleSplit.splitSampleSizes, sampleSplit.originalSplitSize, new Random(seed)).iterator
   }
 }

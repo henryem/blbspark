@@ -1,6 +1,6 @@
 package edu.berkeley.blbspark
 
-import rdd.{PartitionLabeledItem, RandomPartitionedRDD, ExactWorSampledRDD}
+import rdd.{RandomPartitionedRDD, ExactWorSampledRDD}
 import spark.RDD
 
 /** Factory methods for exact sampled RDDs. */
@@ -79,7 +79,7 @@ object ExactSampling {
                                       withReplacement: Boolean,
                                       sampleSizes: Seq[Int],
                                       seed: Int):
-      RDD[PartitionLabeledItem[WeightedItem[T]]] = {
+      RDD[GroupLabeledItem[WeightedItem[T]]] = {
     if (withReplacement) {
       throw new Exception("Not implemented yet!") //FIXME
     } else {
