@@ -1,7 +1,6 @@
 package edu.berkeley.blbspark.sampling
 
 import java.util.Random
-import com.google.common.base.Preconditions
 import edu.berkeley.blbspark.GroupLabeledItem
 
 object GroupedReservoirSampling {
@@ -13,8 +12,8 @@ object GroupedReservoirSampling {
       rand: Random):
       Seq[GroupLabeledItem[D]] = {
     val sampleTotal = groupCounts.sum
-    Preconditions.checkArgument(sampleTotal >= 0)
-    Preconditions.checkArgument(sampleTotal <= n)
+    require(sampleTotal >= 0)
+    require(sampleTotal <= n)
 
     //TODO: Only really need to allocate 1 array here, but right now 2 are used.
     val reservoir: Array[D] = dataset.take(sampleTotal).toArray

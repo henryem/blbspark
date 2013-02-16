@@ -11,7 +11,7 @@ import com.google.common.base.Preconditions
 object Statistics {
   def mean(data: Seq[Double]): Double = {
     val count = data.size
-    Preconditions.checkArgument(count > 0)
+    require(count > 0)
     data.sum / count
   }
 
@@ -22,7 +22,7 @@ object Statistics {
    */
   def sampleVariance(sample: Seq[Double]): Double = {
     val count = sample.size
-    Preconditions.checkArgument(count > 1)
+    require(count > 1)
     // Special case: All elements are the same.  Numerical issues might
     // make us return something nonzero, but we should return exactly zero.
     // There's probably a better way to do this.
