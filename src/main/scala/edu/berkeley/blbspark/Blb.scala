@@ -34,7 +34,7 @@ object Blb {
       Array.fill(s)(subsampleSize),
       seed)
     flatSamples
-      .groupBy(_.group, numSplits)
+      .groupBy[Int]({(row: GroupLabeledItem[WeightedItem[D]]) => row.group}, numSplits)
       .map(_._2.map(_.item))
   }
 
@@ -78,7 +78,7 @@ object Blb {
       partition.zipWithIndex.map(resampleSingleSubsample(splitIdx))
     }
 
-    subsamples.mapPartitionsWithSplit(resampleSinglePartition)
+    subsamples.mapPartitionsWithIndex(resampleSinglePartition)
   }
 
   /**

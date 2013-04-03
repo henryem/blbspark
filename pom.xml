@@ -29,12 +29,6 @@
   </pluginRepositories>
 
   <dependencies>
-    <!--dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <version>${scala.version}</version>
-    </dependency-->
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -54,10 +48,8 @@
     </dependency>
     <dependency>
       <groupId>org.spark-project</groupId>
-      <artifactId>parent</artifactId>
-      <version>0.6.1</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/spark-core-assembly-0.6.1.jar</systemPath>
+      <artifactId>spark-core_2.9.2</artifactId>
+      <version>0.7.0</version>
     </dependency>
 
     <dependency>

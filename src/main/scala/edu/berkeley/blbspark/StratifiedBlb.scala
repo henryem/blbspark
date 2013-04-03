@@ -131,8 +131,48 @@ object StratifiedBlb extends Logging {
     xi(thetaValues)
   }
 
+  /**
+   * As stratifiedBlb(), but only creates the list of resamples,
+   * and no stratification is done.
+   *
+   * HACK(henry): This is currently quite trivial and doesn't reuse much from
+   * the stratifiedBlb() code.
+   */
+  def createBlbResamples[D: ClassManifest](
+      originalSample: RDD[WeightedItem[D]],
+      alpha: Double,
+      s: Int,
+      r: Int,
+      numSplits: Int,
+      seed: Int):
+      Seq[Seq[RDD[WeightedItem[D]]]] = {
+    val originalSampleCached = originalSample.cache
+    val originalSampleSize = originalSampleCached.count
+    val subsampleSize: Double = math.floor(math.pow(originalSampleSize, alpha))
+    val subsamplingProportion = subsampleSize / originalSampleSize
+    require(s*subsamplingProportion <= 1.0, "total size of the subsamples (s*N^alpha) exceeds the sample size") //TODO: Probably don't actually want to throw an exception here.
+    val subsamples: Seq[RDD[WeightedItem[D]]] = subsample(originalSampleCached, subsamplingProportion, s, seed)
+    val resamplingRate = 1.0 / subsamplingProportion
+    createResamples(subsamples, resamplingRate, r, seed)
+  }
+
+  /**
+   * As stratifiedBootstrap(), but only creates the list of resamples,
+   * and no stratification is done.
+   *
+   * FIXME(henry): Move this to its own file.
+   */
+  def createBootstrapResamples[D: ClassManifest](
+      originalSample: RDD[WeightedItem[D]],
+      r: Int,
+      numSplits: Int,
+      seed: Int):
+      Seq[RDD[WeightedItem[D]]] = {
+    createResamples(Seq(originalSample), 1, r, seed).flatten
+  }
+
   private def subsample[D: ClassManifest](data: RDD[D], subsampleProportion: Double, numSubsamples: Int, seed: Int): Seq[RDD[D]] = {
-    val approximatelyPartitionedDataCached = data.mapPartitionsWithSplit(
+    val approximatelyPartitionedDataCached = data.mapPartitionsWithIndex(
       (splitIdx: Int, partition: Iterator[D]) => {
         val splitSeed = seed + splitIdx
         val random = new Random(splitSeed)
@@ -147,7 +187,7 @@ object StratifiedBlb extends Logging {
     subsamples.zipWithIndex.map({
       case (subsample: RDD[WeightedItem[D]], subsampleIdx: Int) =>
         //TODO: May be good to cache @subsample here.
-        val numSplits = subsample.splits.length
+        val numSplits = subsample.partitions.size
         (0 until numResamples).map({resampleIdx => resample(subsample, samplingRate, seed + numSplits*(numResamples*subsampleIdx + resampleIdx))})
     })
   }

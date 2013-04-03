@@ -73,8 +73,7 @@ class StratifiedBlbSuite extends FunSuite with BeforeAndAfterEach with ShouldMat
       defaultNumSplits,
       random.nextInt()
     )
-    // This is just a back-of-the-envelope calculation.
-    error should be (0.0075 plusOrMinus(0.002))
+    error should be (0.0091 plusOrMinus(0.002))
   }
 
   test("stratified BLB with many small strata and one large stratum should reflect 0 error in the small strata" +

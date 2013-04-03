@@ -10,6 +10,8 @@ import collection.Iterator
  *   [("a", 2), ("b", 1), ("c", 0), ("a", 1)]
  * ...then the result of iterating over this collection is:
  *   ["a", "a", "b", "a"]
+ *
+ * @param weightedItems must have exactly integral weights.
  */
 class WeightedRepeatingIterable[D](val weightedItems: Iterable[WeightedItem[D]]) extends Iterable[D] with Serializable {
   override def iterator = {
